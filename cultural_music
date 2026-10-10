@@ -1,0 +1,195 @@
+import streamlit as st
+import numpy as np
+import librosa
+import plotly.graph_objects as go
+import os
+
+st.set_page_config(page_title="Ethnomusicological Starburst Engine", layout="wide")
+
+st.markdown("""
+    <style>
+    .stPlotlyChart {
+        box-shadow: 0px 0px 65px rgba(255, 210, 50, 0.35);
+        border-radius: 20px;
+    }
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    st.markdown("##  Cultural Data Library")
+    st.write("Toggle between distinct global acoustic frameworks pre-loaded in your system:")
+    
+    library_choice = st.selectbox(
+        "Acoustic Architecture Spectrum:",
+        [
+            "1. Javanese Gamelan Sléndro (5-Tone Symmetrical Crystal)",
+            "2. Puccini: O Mio Babbino Caro (Western Operatic Larynx)",
+            "3. Sonar Senghor: Dianka Bi (West African Polyrhythmic Drums)",
+            "4. Classical Indian Music (Continuous Raga Contours)",
+            "5. Russian Folk: Kalinka (Accelerando Speed Dynamics)"
+        ]
+    )
+
+# Main Page Headers
+st.markdown("<h2 style='text-align: center; color: #FFFFFF;'> Intercultural Melodic Starburst Engine</h2>", unsafe_allow_html=True)
+
+
+uploaded_file = st.file_uploader("📥 Override library selection by dropping any random song file here (.mp3 / .wav / .mp4):", type=["mp3", "wav", "mp4", "m4a"])
+
+song_mapping = {
+    "1. Javanese Gamelan Sléndro (5-Tone Symmetrical Crystal)": "C:/Users/jazzy/Downloads/java_gamelan.mp3",
+    "2. Puccini: O Mio Babbino Caro (Western Operatic Larynx)": "C:/Users/jazzy/Downloads/italian_opera_puccini.mp3",
+    "3. Sonar Senghor: Dianka Bi (West African Polyrhythmic Drums)": "C:/Users/jazzy/Downloads/senegal_rhythms.mp3",
+    "4. Classical Indian Music (Continuous Raga Contours)": "C:/Users/jazzy/Downloads/heritage_hindustani_improvisation_raga.mp3",
+    "5. Russian Folk: Kalinka (Accelerando Speed Dynamics)": "C:/Users/jazzy/Downloads/russian_balalaika_kalinka.mp3"
+}
+
+y_signal, sr, current_display_name = None, 22050, ""
+
+if uploaded_file is not None:
+    current_display_name = uploaded_file.name
+    with st.spinner(f"Ingesting live matrix upload: {current_display_name}..."):
+        y_signal, sr = librosa.load(uploaded_file, sr=22050, duration=45.0)
+else:
+    target_audio_path = song_mapping[library_choice]
+    current_display_name = library_choice
+    if os.path.exists(target_audio_path):
+        with st.spinner(f"Ingesting track arrays from storage... Processing: {os.path.basename(target_audio_path)}"):
+            y_signal, sr = librosa.load(target_audio_path, sr=22050, duration=45.0)
+    else:
+        st.error(f"❌ File Missing Error: The system could not locate your file at: '{target_audio_path}'")
+        st.info("⚠️ Please double-check your file configurations or upload a file directly above.")
+
+st.write(f"Currently tracking physical signal geometry for: **{current_display_name}**")
+
+
+if y_signal is not None:
+    stft = librosa.stft(y_signal, n_fft=2048, hop_length=512)
+    V = np.abs(stft)  
+    
+    n_features = int(V.shape[0])
+    total_frames = int(V.shape[1])
+    
+    # Native NumPy NMF Matrix Initialization
+    rng = np.random.default_rng(42)
+    n_components = 2
+    W = rng.uniform(0.1, 1.0, size=(n_features, n_components))
+    H = rng.uniform(0.1, 1.0, size=(n_components, total_frames))
+    
+    eps = 1e-10
+    
+    # Execute Multiplicative Updates
+    for iteration in range(30):
+        WH = W @ H + eps
+        H *= (W.T @ (V / WH)) / (W.T @ np.ones(V.shape) + eps)
+        WH = W @ H + eps
+        W *= ((V / WH) @ H.T) / (np.ones(V.shape) @ H.T + eps)
+        
+    V_melody = W @ H
+    
+    frequencies = librosa.fft_frequencies(sr=sr, n_fft=2048)
+    time_frames = librosa.frames_to_time(np.arange(total_frames), sr=sr, hop_length=512)
+
+  
+    threshold = np.max(V_melody) * 0.1  
+    
+    # dynamic spacing for immediate processing
+    t_stride = max(1, total_frames // 80)
+    f_stride = 4  
+    
+    # Sub-slice the structural matrices
+    V_sub = V_melody[::f_stride, ::t_stride]
+    freqs_sub = frequencies[::f_stride]
+    times_sub = time_frames[::t_stride]
+    
+    # Map frequencies to safe values for log projection
+    safe_freqs = np.where(freqs_sub > 0, freqs_sub, 1.0)
+    
+    # Create 2D computational coordinate matrices matching the data landscape
+    # Rows represent frequency bins, Columns represent timestamps
+    f_matrix, t_matrix = np.meshgrid(safe_freqs, times_sub, indexing='ij')
+    
+
+    valid_mask = V_sub > threshold
+    
+  
+    mag_clean = V_sub[valid_mask]
+    t_clean = t_matrix[valid_mask]
+    f_clean = f_matrix[valid_mask]
+    
+    if len(mag_clean) > 0:
+        # Calculate real acoustic angle transformations based directly on physical pitch
+        theta_vec = 2 * np.pi * (np.log2(f_clean) % 1)
+        
+        # Calculate outward radial spoke extensions from true audio volume intensity
+        norm_mag = mag_clean / np.max(V_melody)
+        r_vec = 10 + (norm_mag * 90)
+        
+        # Generate spatial 3D cross-section coordinate tracks
+        y_vec = r_vec * np.cos(theta_vec)
+        z_vec = r_vec * np.sin(theta_vec)
+        
+        # 🌟 HIGH-SPEED VECTORIZED FILAMENT ASSEMBLER
+        # Combines start, end, and break arrays instantaneously without slow append loops
+        num_spokes = len(t_clean)
+        line_x = np.vstack([t_clean, t_clean, np.full(num_spokes, None)]).T.flatten()
+        line_y = np.vstack([np.zeros(num_spokes), y_vec, np.full(num_spokes, None)]).T.flatten()
+        line_z = np.vstack([np.zeros(num_spokes), z_vec, np.full(num_spokes, None)]).T.flatten()
+        
+        # Assign constellation particle properties
+        scatter_x, scatter_y, scatter_z = t_clean, y_vec, z_vec
+        scatter_color = norm_mag
+        scatter_text = [f"Time: {t:.2f}s<br>True Freq: {f:.1f} Hz<br>Energy: {e:.2f}" 
+                        for t, f, e in zip(t_clean, f_clean, norm_mag)]
+    else:
+        line_x, line_y, line_z = [], [], []
+        scatter_x, scatter_y, scatter_z, scatter_color, scatter_text = [], [], [], 0.0, ""
+
+   
+    fig = go.Figure()
+
+    # TRACE 1: AUTHENTIC MULTI-DIRECTIONAL FILAMENT SNOWFLAKES
+    fig.add_trace(go.Scatter3d(
+        x=line_x, y=line_y, z=line_z,
+        mode='lines',
+        line=dict(color='rgba(255, 210, 50, 0.22)', width=1.3),
+        name="Structural Filaments",
+        hoverinfo='skip'
+    ))
+
+   
+    fig.add_trace(go.Scatter3d(
+        x=scatter_x, y=scatter_y, z=scatter_z,
+        mode='markers',
+        marker=dict(
+            size=2.8,  
+            color=scatter_color,
+            colorscale=[[0, '#111625'], [0.2, '#6B5BFF'], [0.6, '#FFD232'], [1, '#FF4B4B']],
+            opacity=0.9
+        ),
+        name="Melodic Coordinates",
+        text=scatter_text,
+        hoverinfo='text'
+    ))
+
+    max_yz = max(max(np.abs(scatter_y)), max(np.abs(scatter_z))) * 1.05 if len(scatter_y) > 0 else 100
+    fig.update_layout(
+        width=1100, height=750,
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=5, r=5, t=5, b=5),
+        scene=dict(
+            xaxis=dict(title="Time Timeline (Seconds)", visible=True, range=[np.max(time_frames), 0]), 
+            yaxis=dict(visible=False, range=[-max_yz, max_yz]), 
+            zaxis=dict(visible=False, range=[-max_yz, max_yz]),
+            camera=dict(eye=dict(x=1.3, y=1.5, z=1.3)) 
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
