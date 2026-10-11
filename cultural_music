@@ -38,7 +38,7 @@ with st.sidebar:
 st.markdown("<h2 style='text-align: center; color: #FFFFFF;'> Intercultural Melodic Starburst Engine</h2>", unsafe_allow_html=True)
 
 
-uploaded_file = st.file_uploader("📥 Override library selection by dropping any random song file here (.mp3 / .wav / .mp4):", type=["mp3", "wav", "mp4", "m4a"])
+uploaded_file = st.file_uploader("Override library selection by dropping any random song file here (.mp3 / .wav / .mp4):", type=["mp3", "wav", "mp4", "m4a"])
 
 song_mapping = {
     "1. Javanese Gamelan Sléndro (5-Tone Symmetrical Crystal)": "C:/Users/jazzy/Downloads/java_gamelan.mp3",
@@ -61,8 +61,8 @@ else:
         with st.spinner(f"Ingesting track arrays from storage... Processing: {os.path.basename(target_audio_path)}"):
             y_signal, sr = librosa.load(target_audio_path, sr=22050, duration=45.0)
     else:
-        st.error(f"❌ File Missing Error: The system could not locate your file at: '{target_audio_path}'")
-        st.info("⚠️ Please double-check your file configurations or upload a file directly above.")
+        st.error(f"File Missing Error: The system could not locate your file at: '{target_audio_path}'")
+        st.info("Please double-check your file configurations or upload a file directly above.")
 
 st.write(f"Currently tracking physical signal geometry for: **{current_display_name}**")
 
@@ -133,7 +133,6 @@ if y_signal is not None:
         y_vec = r_vec * np.cos(theta_vec)
         z_vec = r_vec * np.sin(theta_vec)
         
-        # 🌟 HIGH-SPEED VECTORIZED FILAMENT ASSEMBLER
         # Combines start, end, and break arrays instantaneously without slow append loops
         num_spokes = len(t_clean)
         line_x = np.vstack([t_clean, t_clean, np.full(num_spokes, None)]).T.flatten()
